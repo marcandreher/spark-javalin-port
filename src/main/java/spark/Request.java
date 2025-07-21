@@ -126,6 +126,15 @@ public class Request {
     }
 
     /**
+     * Gets all values for a query parameter (useful for multiple values with same name)
+     * @param queryParam the name of the query parameter
+     * @return array of values for the parameter, or empty array if not found
+     */
+    public String[] queryParamsValues(String queryParam) {
+        return context.queryParams(queryParam).toArray(new String[0]);
+    }
+
+    /**
      * @return all query parameters
      */
     public Set<String> queryParams() {

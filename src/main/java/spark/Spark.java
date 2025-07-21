@@ -12,7 +12,8 @@ public class Spark {
 
     private static Spark instance;
     private Javalin javalin;
-    private StaticFiles staticFiles = new StaticFiles();
+    
+    public StaticFiles staticFiles = new StaticFiles();
 
     private String ipAddress;
     private int port = 7070;
@@ -23,7 +24,7 @@ public class Spark {
     private Integer maxThreads;
     private Integer timeoutMillis;
 
-    private Spark() {
+    public Spark() {
         logger.info("Spark Javalin Bridge is igniting");
     }
 
