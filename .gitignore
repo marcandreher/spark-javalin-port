@@ -1,3 +1,4 @@
 # Spark-Javalin Bridge
 /target/
 public/
+/.vscode/
