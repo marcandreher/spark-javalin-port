@@ -1,8 +1,10 @@
 package spark;
 
 import io.javalin.http.Context;
+import io.javalin.http.UploadedFile;
 import java.util.Map;
 import java.util.Set;
+import java.util.List;
 
 /**
  * Request wrapper that provides Spark-like API over Javalin's Context
@@ -221,10 +223,11 @@ public class Request {
     }
 
     /**
-     * Get the raw Javalin context (for advanced use)
+     * Get the raw request wrapper that provides servlet-like multipart methods
+     * This allows existing servlet code to work: req.raw().getPart("name")
      */
-    public Context raw() {
-        return context;
+    public RawRequestWrapper raw() {
+        return new RawRequestWrapper(context, this);
     }
 
     /**
@@ -247,5 +250,100 @@ public class Request {
      */
     public void attribute(String attribute, Object value) {
         context.attribute(attribute, value);
+    }
+
+    /**
+     * Get the underlying Javalin context (for advanced use)
+     * Use context() if you need direct access to Javalin Context
+     */
+    public Context context() {
+        return context;
+    }
+
+    // === Multipart File Upload Support ===
+
+    /**
+     * Gets an uploaded file by name
+     * @param name the name of the file input field
+     * @return the uploaded file, or null if not found
+     */
+    public UploadedFile uploadedFile(String name) {
+        return context.uploadedFile(name);
+    }
+
+    /**
+     * Gets all uploaded files for a given input name
+     * @param name the name of the file input field
+     * @return list of uploaded files
+     */
+    public List<UploadedFile> uploadedFiles(String name) {
+        return context.uploadedFiles(name);
+    }
+
+    /**
+     * Gets all uploaded files in the request
+     * @return map of field names to uploaded files
+     */
+    public Map<String, List<UploadedFile>> uploadedFiles() {
+        return context.uploadedFileMap();
+    }
+
+    /**
+     * Checks if the request contains multipart data
+     * @return true if request is multipart
+     */
+    public boolean isMultipart() {
+        String contentType = contentType();
+        return contentType != null && contentType.toLowerCase().startsWith("multipart/");
+    }
+
+    /**
+     * Gets form parameter (from multipart or url-encoded forms)
+     * @param name the parameter name
+     * @return the parameter value
+     */
+    public String formParam(String name) {
+        return context.formParam(name);
+    }
+
+    /**
+     * Gets all form parameters
+     * @return map of form parameters
+     */
+    public Map<String, List<String>> formParams() {
+        return context.formParamMap();
+    }
+
+    // === Servlet-like Multipart API (for compatibility) ===
+
+    /**
+     * Gets a multipart part by name (servlet-like API)
+     * @param name the name of the part/field
+     * @return a PartWrapper that mimics servlet Part interface, or null if not found
+     */
+    public PartWrapper getPart(String name) {
+        UploadedFile file = context.uploadedFile(name);
+        return file != null ? new PartWrapper(file) : null;
+    }
+
+    /**
+     * Gets all multipart parts (servlet-like API)
+     * @return list of PartWrapper objects
+     */
+    public List<PartWrapper> getParts() {
+        return context.uploadedFileMap().values().stream()
+            .flatMap(List::stream)
+            .map(PartWrapper::new)
+            .toList();
+    }
+
+    /**
+     * Gets the number of multipart parts
+     * @return number of uploaded parts
+     */
+    public int getPartsCount() {
+        return context.uploadedFileMap().values().stream()
+            .mapToInt(List::size)
+            .sum();
     }
 }

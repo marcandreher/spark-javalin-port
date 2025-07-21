@@ -12,8 +12,8 @@ public class Spark {
 
     private static Spark instance;
     private Javalin javalin;
-    
-    public StaticFiles staticFiles = new StaticFiles();
+
+    public static StaticFiles staticFiles = new StaticFiles();
 
     private String ipAddress;
     private int port = 7070;
@@ -83,7 +83,7 @@ public class Spark {
     }
 
     public static StaticFiles staticFiles() {
-        return getInstance().staticFiles;
+        return Spark.staticFiles;
     }
 
     public static void before(String path, Filter filter) {
@@ -225,9 +225,9 @@ public class Spark {
                 // Configure static files
                 if (staticFiles.externalLocation != null) {
                     // Check if the directory exists before configuring static files
-                    if (Files.exists(Paths.get(staticFiles.externalLocation))) {
+                    if (Files.exists(Paths.get(Spark.staticFiles.externalLocation))) {
                         config.staticFiles.add(staticFiles -> {
-                            staticFiles.directory = this.staticFiles.externalLocation;
+                            staticFiles.directory = Spark.staticFiles.externalLocation;
                             staticFiles.location = Location.EXTERNAL;
                         });
                     } else {
