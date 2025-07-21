@@ -39,6 +39,10 @@ public class Spark {
         getInstance().setPort(port);
     }
 
+    public static int port() {
+        return getInstance().port;
+    }
+
     public void setPort(int port) {
         this.port = port;
     }
