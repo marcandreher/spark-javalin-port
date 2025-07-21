@@ -13,8 +13,15 @@ public class Spark {
     private static Spark instance;
     private Javalin javalin;
     private StaticFiles staticFiles = new StaticFiles();
+
+    private String ipAddress;
     private int port = 7070;
     private boolean initialized = false;
+    
+    // Thread pool configuration
+    private Integer minThreads;
+    private Integer maxThreads;
+    private Integer timeoutMillis;
 
     private Spark() {
         logger.info("Spark Javalin Bridge is igniting");
@@ -33,6 +40,17 @@ public class Spark {
 
     public void setPort(int port) {
         this.port = port;
+    }
+
+    public static void threadPool(int minThreads, int maxThreads, int timeoutMillis) {
+        Spark instance = getInstance();
+        instance.minThreads = minThreads;
+        instance.maxThreads = maxThreads;
+        instance.timeoutMillis = timeoutMillis;
+    }
+
+    public static void ipAddress(String ipAddress) {
+        getInstance().ipAddress = ipAddress;
     }
 
     public static void get(String path, Route route) {
@@ -96,6 +114,10 @@ public class Spark {
     }
 
     public static void stop() {
+        getInstance().stopServer();
+    }
+
+    public synchronized static void awaitStop() {
         getInstance().stopServer();
     }
 
@@ -197,7 +219,9 @@ public class Spark {
 
     public synchronized void initializeServer() {
         if (!initialized) {
-            javalin = Javalin.create(config -> {
+            // Create Javalin instance with configuration
+            var javalinBuilder = Javalin.create(config -> {
+                // Configure static files
                 if (staticFiles.externalLocation != null) {
                     // Check if the directory exists before configuring static files
                     if (Files.exists(Paths.get(staticFiles.externalLocation))) {
@@ -209,7 +233,22 @@ public class Spark {
                         System.out.println("Warning: Static file directory '" + staticFiles.externalLocation + "' does not exist. Skipping static file configuration.");
                     }
                 }
-            }).start(port);
+            });
+            
+            // Start server with IP address if specified
+            if (ipAddress != null) {
+                javalin = javalinBuilder.start(ipAddress, port);
+            } else {
+                javalin = javalinBuilder.start(port);
+            }
+            
+            // Log thread pool configuration if specified
+            if (minThreads != null && maxThreads != null) {
+                logger.info("Thread pool configured: minThreads=" + minThreads + 
+                          ", maxThreads=" + maxThreads + 
+                          (timeoutMillis != null ? ", timeout=" + timeoutMillis : ""));
+            }
+            
             initialized = true;
         }
     }
